@@ -1,4 +1,10 @@
-import { config } from 'dotenv';
+//import { config } from 'dotenv';
+
+//const dotenv = require('dotenv');
+//dotenv.config();
+
+const { config } = require("dotenv");
+
 
 config();
 const database = process.env.DATABASE;
@@ -14,7 +20,7 @@ const pool = new Pool({
   database: database,
   password: password,
   port: port,
-})
+});
 
 
 const getUsers = async () => {
@@ -172,7 +178,7 @@ const getAvailableSlots = () => {
   });
 };
 
-const createReservation = (body) => {
+const createReservation = (body,pdfFile) => {
   return new Promise(function (resolve, reject) {
     const { email, cancha_id, horario_id } = body;
 
@@ -180,6 +186,12 @@ const createReservation = (body) => {
     console.log('Cancha ID:', cancha_id);
     console.log('Horario ID:', horario_id);
 
+    // Leer el archivo PDF como un buffer
+   // const pdfData = pdfFile ? fs.readFileSync(pdfFile.path) : null;
+   let pdfData = null;
+   if (pdfFile) {
+     pdfData = pdfFile.buffer; // Suponiendo que el archivo ya fue procesado por multer
+   }
 
     // Obtener el usuario por email
     pool.query(
@@ -194,9 +206,9 @@ const createReservation = (body) => {
 
         // Crear la reserva
         pool.query(
-          `INSERT INTO public.reservas (users_fk,canchas_fk , horarios_fk) 
-           VALUES ($1, $2, $3) RETURNING *`,
-          [usuario_id,cancha_id, horario_id ],
+          `INSERT INTO public.reservas (users_fk,canchas_fk , horarios_fk, comprobante) 
+           VALUES ($1, $2, $3, $4) RETURNING *`,
+          [usuario_id,cancha_id, horario_id, pdfData ],
           (error, results) => {
             if (error) {
               reject(error);

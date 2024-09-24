@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from 'react';
 
 function Register() {
@@ -6,7 +7,9 @@ function Register() {
   const [selectedCancha, setSelectedCancha] = useState('');
   const [filteredSlots, setFilteredSlots] = useState([]);
   const [selectedHorario, setSelectedHorario] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(null);
+
+  const [pdfFile, setPdfFile] = useState(null);  // Nuevo estado para el archivo PDF
 
   useEffect(() => {
     fetch('http://localhost:3000/available-slots')
@@ -22,8 +25,12 @@ function Register() {
     }
   }, [selectedDate, slots]);
 
+
+  /*
   const handleSubmit = (event) => {
     event.preventDefault();
+
+
     fetch('http://localhost:3000/reserve', {
       method: 'POST',
       headers: {
@@ -39,6 +46,35 @@ function Register() {
         console.error('Error creating reservation:', error);
       });
   };
+  */
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+
+    // Crear FormData para enviar tanto los campos como el archivo PDF
+    const formData = new FormData();
+    formData.append('email', email);
+    formData.append('cancha_id', selectedCancha);
+    formData.append('horario_id', selectedHorario);
+
+    if (pdfFile) {
+      formData.append('comprobante', pdfFile);  // Añadir el archivo PDF al formData
+    }
+
+    // Realizar el fetch utilizando FormData en lugar de JSON
+    fetch('http://localhost:3000/reserve', {
+      method: 'POST',
+      body: formData,  // Enviar FormData en lugar de JSON
+    })
+      .then(response => response.text())
+      .then(data => {
+        alert(data);
+      })
+      .catch(error => {
+        console.error('Error creating reservation:', error);
+      });
+  };
+
 
   // Obtener una lista de fechas únicas de los horarios disponibles
   const uniqueDates = [...new Set(slots.map(slot => slot.fecha))];
@@ -88,6 +124,14 @@ function Register() {
               </option>
             ))}
           </select>
+          </div>
+        <div>
+          <label>Subir PDF (opcional):</label>
+          <input
+            type="file"
+            accept="application/pdf"  // Asegura que solo se puedan seleccionar archivos PDF
+            onChange={(e) => setPdfFile(e.target.files[0])}  // Guardar el archivo PDF seleccionado
+          />
         </div>
         <button type="submit">Reserve</button>
       </form>

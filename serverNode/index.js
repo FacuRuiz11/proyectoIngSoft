@@ -3,6 +3,7 @@ const bodyParser = require('body-parser')
 const app = express()
 const db = require('./queries')
 const port = 3000
+const multer = require('multer')
 
 /*
 app.use(bodyParser.json());
@@ -12,6 +13,12 @@ app.use(
   })
 )
 */
+
+const upload = multer();  // El archivo PDF se guardará temporalmente aquí
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 
 app.use(express.json())
 app.use(function (req, res, next) {
@@ -90,8 +97,26 @@ app.get('/available-slots', (req, res) => {
 });
 
 
+/*
 app.post('/reserve', (req, res) => {
+
   db.createReservation(req.body)
+    .then(response => {
+      res.status(200).send(response);
+    })
+    .catch(error => {
+      res.status(500).send(error);
+    });
+});
+
+*/
+
+app.post('/reserve', upload.single('comprobante'), (req, res) => {
+
+  const { body } = req;
+  const pdfFile = req.file;  // El archivo PDF subido
+
+  db.createReservation(body, pdfFile)
     .then(response => {
       res.status(200).send(response);
     })
